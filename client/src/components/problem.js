@@ -1,7 +1,7 @@
 import withStyles from '../components/jss'
 import { useState, useCallback, useRef } from 'preact/hooks'
 
-import { submitFlag, getSolves } from '../api/challenges'
+import { getSolves } from '../api/challenges'
 import { useToast } from './toast'
 import SolvesDialog from './solves-dialog'
 import Markdown from './markdown'
@@ -14,32 +14,10 @@ const markdownComponents = {
 
 const solvesPageSize = 10
 
-const Problem = ({ classes, problem, solved, setSolved }) => {
+const Problem = ({ classes, problem, solved }) => {
   const { toast } = useToast()
 
   const hasDownloads = problem.files.length !== 0
-
-  const [error, setError] = useState(undefined)
-  const hasError = error !== undefined
-
-  const [value, setValue] = useState('')
-  const handleInputChange = useCallback(e => setValue(e.target.value), [])
-
-  const handleSubmit = useCallback(e => {
-    e.preventDefault()
-
-    submitFlag(problem.id, value.trim())
-      .then(({ error }) => {
-        if (error === undefined) {
-          toast({ body: 'Flag successfully submitted!' })
-
-          setSolved(problem.id)
-        } else {
-          toast({ body: error, type: 'error' })
-          setError(error)
-        }
-      })
-  }, [toast, setSolved, problem, value])
 
   const [solves, setSolves] = useState(null)
   const [solvesPending, setSolvesPending] = useState(false)
@@ -105,19 +83,6 @@ const Problem = ({ classes, problem, solved, setSolved }) => {
         <div class={`${classes.description} frame__subtitle`}>
           <Markdown content={problem.description} components={markdownComponents} />
         </div>
-        <form class='form-section' onSubmit={handleSubmit}>
-          <div class='form-group'>
-            <input
-              autocomplete='off'
-              autocorrect='off'
-              class={`form-group-input input-small ${classes.input} ${hasError ? 'input-error' : ''} ${solved ? 'input-success' : ''}`}
-              placeholder={`Flag${solved ? ' (solved)' : ''}`}
-              value={value}
-              onChange={handleInputChange}
-            />
-            <button class={`form-group-btn btn-small ${classes.submit}`}>Submit</button>
-          </div>
-        </form>
 
         {
           hasDownloads &&

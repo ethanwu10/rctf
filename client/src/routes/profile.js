@@ -19,6 +19,8 @@ import Rank from '../icons/rank.svg'
 import Ctftime from '../icons/ctftime.svg'
 import useRecaptcha, { RecaptchaLegalNotice } from '../components/recaptcha'
 
+const hasDivisions = Object.keys(config.divisions).length > 1
+
 const SummaryCard = memo(withStyles({
   icon: {
     '& svg': {
@@ -78,28 +80,32 @@ const SummaryCard = memo(withStyles({
               : (`${score} total points`)
           }
         </p>
+        {hasDivisions && (
+          <p>
+            <span class={`icon ${classes.icon}`}>
+              <Rank />
+            </span>
+            {
+              score === 0 ? 'Unranked' : `${divisionPlace} in the ${division} division`
+            }
+          </p>
+        )}
         <p>
           <span class={`icon ${classes.icon}`}>
             <Rank />
           </span>
           {
-            score === 0 ? 'Unranked' : `${divisionPlace} in the ${division} division`
+            score === 0 ? 'Unranked' : globalPlace + (hasDivisions ? ' across all teams' : '')
           }
         </p>
-        <p>
-          <span class={`icon ${classes.icon}`}>
-            <Rank />
-          </span>
-          {
-            score === 0 ? 'Unranked' : `${globalPlace} across all teams`
-          }
-        </p>
-        <p>
-          <span class={`icon ${classes.icon}`}>
-            <AddressBook />
-          </span>
-          {division} division
-        </p>
+        {hasDivisions && (
+          <p>
+            <span class={`icon ${classes.icon}`}>
+              <AddressBook />
+            </span>
+            {division} division
+          </p>
+        )}
       </div>
     </div>
   </div>

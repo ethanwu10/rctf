@@ -6,7 +6,7 @@ import Problem from '../components/problem'
 import NotStarted from '../components/not-started'
 import { useToast } from '../components/toast'
 
-import { getChallenges, getPrivateSolves } from '../api/challenges'
+import { getChallenges } from '../api/challenges'
 
 const loadStates = {
   pending: 0,
@@ -18,23 +18,8 @@ const Challenges = ({ classes }) => {
   const challPageState = useMemo(() => JSON.parse(localStorage.getItem('challPageState') || '{}'), [])
   const [problems, setProblems] = useState(null)
   const [categories, setCategories] = useState(challPageState.categories || {})
-  const [showSolved, setShowSolved] = useState(challPageState.showSolved || false)
-  const [solveIDs, setSolveIDs] = useState([])
   const [loadState, setLoadState] = useState(loadStates.pending)
   const { toast } = useToast()
-
-  const setSolved = useCallback(id => {
-    setSolveIDs(solveIDs => {
-      if (!solveIDs.includes(id)) {
-        return [...solveIDs, id]
-      }
-      return solveIDs
-    })
-  }, [])
-
-  const handleShowSolvedChange = useCallback(e => {
-    setShowSolved(e.target.checked)
-  }, [])
 
   const handleCategoryCheckedChange = useCallback(e => {
     setCategories(categories => ({
@@ -77,30 +62,14 @@ const Challenges = ({ classes }) => {
   }, [toast, categories, problems])
 
   useEffect(() => {
-    const action = async () => {
-      const { data, error } = await getPrivateSolves()
-      if (error) {
-        toast({ body: error, type: 'error' })
-        return
-      }
-
-      setSolveIDs(data.map(solve => solve.id))
-    }
-    action()
-  }, [toast])
-
-  useEffect(() => {
-    localStorage.challPageState = JSON.stringify({ categories, showSolved })
-  }, [categories, showSolved])
+    localStorage.challPageState = JSON.stringify({ categories })
+  }, [categories])
 
   const problemsToDisplay = useMemo(() => {
     if (problems === null) {
       return []
     }
     let filtered = problems
-    if (!showSolved) {
-      filtered = filtered.filter(problem => !solveIDs.includes(problem.id))
-    }
     let filterCategories = false
     Object.values(categories).forEach(displayCategory => {
       if (displayCategory) filterCategories = true
@@ -128,33 +97,23 @@ const Challenges = ({ classes }) => {
     })
 
     return filtered
-  }, [problems, categories, showSolved, solveIDs])
+  }, [problems, categories])
 
-  const { categoryCounts, solvedCount } = useMemo(() => {
+  const { categoryCounts } = useMemo(() => {
     const categoryCounts = new Map()
-    let solvedCount = 0
     if (problems !== null) {
       for (const problem of problems) {
         if (!categoryCounts.has(problem.category)) {
           categoryCounts.set(problem.category, {
-            total: 0,
-            solved: 0
+            total: 0
           })
         }
 
-        const solved = solveIDs.includes(problem.id)
         categoryCounts.get(problem.category).total += 1
-        if (solved) {
-          categoryCounts.get(problem.category).solved += 1
-        }
-
-        if (solved) {
-          solvedCount += 1
-        }
       }
     }
-    return { categoryCounts, solvedCount }
-  }, [problems, solveIDs])
+    return { categoryCounts }
+  }, [problems])
 
   if (loadState === loadStates.pending) {
     return null
@@ -169,24 +128,13 @@ const Challenges = ({ classes }) => {
       <div class='col-3'>
         <div class={`frame ${classes.frame}`}>
           <div class='frame__body'>
-            <div class='frame__title title'>Filters</div>
-            <div class={classes.showSolved}>
-              <div class='form-ext-control form-ext-checkbox'>
-                <input id='show-solved' class='form-ext-input' type='checkbox' checked={showSolved} onChange={handleShowSolvedChange} />
-                <label for='show-solved' class='form-ext-label'>Show Solved ({solvedCount}/{problems.length} solved)</label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class={`frame ${classes.frame}`}>
-          <div class='frame__body'>
             <div class='frame__title title'>Categories</div>
             {
               Array.from(categoryCounts.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([category, { solved, total }]) => {
                 return (
                   <div key={category} class='form-ext-control form-ext-checkbox'>
                     <input id={`category-${category}`} data-category={category} class='form-ext-input' type='checkbox' checked={categories[category]} onChange={handleCategoryCheckedChange} />
-                    <label for={`category-${category}`} class='form-ext-label'>{category} ({solved}/{total} solved)</label>
+                    <label for={`category-${category}`} class='form-ext-label'>{category} ({total})</label>
                   </div>
                 )
               })
@@ -201,8 +149,8 @@ const Challenges = ({ classes }) => {
               <Problem
                 key={problem.id}
                 problem={problem}
-                solved={solveIDs.includes(problem.id)}
-                setSolved={setSolved}
+                solved={false}
+                setSolved={() => {}}
               />
             )
           })
